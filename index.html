@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🧊 小鹏空调创业路</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10131a;color:#f4f6fa;font-family:Arial,"Microsoft YaHei",sans-serif}
+.wrap{max-width:720px;margin:auto;padding:16px}
+h1{font-size:25px;margin:5px 0 15px}
+.card{background:#1a1f29;border:1px solid #2d3543;border-radius:14px;padding:15px;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:#222936;border-radius:10px;padding:12px}
+.stat b{display:block;font-size:20px;margin-top:5px}
+button{width:100%;border:0;border-radius:10px;padding:13px;margin:6px 0;background:#3478f6;color:white;font-size:16px;font-weight:bold}
+button:disabled{background:#4b515c}
+.job{padding:12px 0;border-bottom:1px solid #303744}
+.job:last-child{border-bottom:0}
+.job strong{display:block;margin-bottom:5px}
+.small{color:#aeb7c5;font-size:13px}
+.log{max-height:190px;overflow:auto;font-size:13px;line-height:1.7}
+.good{color:#6ee7a0}
+.warn{color:#ffd166}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧊 小鹏空调创业路</h1><div class="card">
+<div class="stats">
+<div class="stat">现金<b id="cash">¥5,000</b></div>
+<div class="stat">第几天<b id="day">1</b></div>
+<div class="stat">信誉<b id="rep">0</b></div>
+<div class="stat">安装工<b id="workers">1人</b></div>
+<div class="stat">车辆<b id="cars">0辆</b></div>
+<div class="stat">完成订单<b id="orders">0单</b></div>
+</div>
+</div><div class="card">
+<h2>📋 今日订单</h2>
+<div id="jobs"></div>
+</div><div class="card">
+<h2>🏢 公司发展</h2>
+<button onclick="hire()">招聘安装工 ¥2,500</button>
+<button onclick="nextDay()">结束今天 / 进入下一天</button>
+<div class="small">每天每名安装工工资：¥220</div>
+</div><div class="card">
+<h2>📒 公司流水</h2>
+<div id="log" class="log"></div>
+</div>
+</div><script>
+let game=JSON.parse(localStorage.getItem("xpeng_ac_game")||"null")||{
+ cash:5000,day:1,rep:0,workers:1,cars:0,orders:0,logs:["公司成立，小鹏开始接空调安装活。"]
+};
+
+const jobList=[
+ {name:"1.5P挂机安装",pay:500,rep:2},
+ {name:"2P柜机安装",pay:800,rep:3},
+ {name:"天花机安装",pay:1000,rep:4},
+ {name:"挂机安装 + 8米铜管",pay:1700,rep:4},
+ {name:"小型维修",pay:380,rep:1}
+];
+
+function money(n){
+ return "¥"+n.toLocaleString("zh-CN");
+}
+
+function save(){
+ localStorage.setItem("xpeng_ac_game",JSON.stringify(game));
+ render();
+}
+
+function log(t){
+ game.logs.unshift("第"+game.day+"天： "+t);
+ game.logs=game.logs.slice(0,30);
+}
+
+function render(){
+ document.getElementById("cash").textContent=money(game.cash);
+ document.getElementById("day").textContent=game.day;
+ document.getElementById("rep").textContent=game.rep;
+ document.getElementById("workers").textContent=game.workers+"人";
+ document.getElementById("cars").textContent=game.cars+"辆";
+ document.getElementById("orders").textContent=game.orders;
+
+ document.getElementById("jobs").innerHTML=jobList.map((j,i)=>
+ `<div class="job">
+ <strong>${j.name}</strong>
+ <div class="small">收入 ${money(j.pay)}　信誉 +${j.rep}</div>
+ <button onclick="takeJob(${i})">接这个订单</button>
+ </div>`).join("");
+
+ document.getElementById("log").innerHTML=game.logs.map(x=>"<div>"+x+"</div>").join("");
+}
+
+function takeJob(i){
+ let j=jobList[i];
+
+ if(game.workers<1){
+   alert("没有安装工，无法接单。");
+   return;
+ }
+
+ game.cash+=j.pay;
+ game.rep+=j.rep;
+ game.orders++;
+
+ log("完成「"+j.name+"」，收到 "+money(j.pay)+"。");
+
+ if(Math.random()<0.25){
+   let bonus=Math.floor(Math.random()*700)+300;
+   game.cash+=bonus;
+   game.rep++;
+   log("客户介绍了新客户，获得介绍奖励 "+money(bonus)+"！");
+ }
+
+ save();
+}
+
+function hire(){
+ if(game.cash<2500){
+   alert("现金不足 ¥2,500，暂时招不起安装工。");
+   return;
+ }
+
+ game.cash-=2500;
+ game.workers++;
+ log("招聘了一名新安装工，支付招聘成本 ¥2,500。");
+ save();
+}
+
+function nextDay(){
+ let wage=game.workers*220;
+ game.cash-=wage;
+ game.day++;
+
+ log("支付 "+game.workers+" 名安装工工资，共 "+money(wage)+"。");
+
+ if(Math.random()<0.2){
+   let event=Math.floor(Math.random()*3);
+
+   if(event===0){
+     let income=500+Math.floor(Math.random()*1000);
+     game.cash+=income;
+     log("老客户临时加单，额外收入 "+money(income)+"。");
+   }else if(event===1){
+     let cost=200+Math.floor(Math.random()*500);
+     game.cash-=cost;
+     log("车辆维修及工具损耗，支出 "+money(cost)+"。");
+   }else{
+     game.rep++;
+     log("客户在本地给你留下好评，信誉 +1。");
+   }
+ }
+
+ if(game.cash<0){
+   log("⚠️ 公司现金已经为负，资金链出现危险！");
+ }
+
+ save();
+}
+
+render();
+</script></body>
+</html>
